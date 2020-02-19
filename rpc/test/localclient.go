@@ -1,4 +1,4 @@
-package client
+package rpctest
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	nm "github.com/tendermint/tendermint/node"
+	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/core"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpctypes "github.com/tendermint/tendermint/rpc/lib/types"
@@ -20,6 +21,9 @@ import (
 /*
 Local is a Client implementation that directly executes the rpc
 functions on a given node, without going through HTTP or GRPC.
+
+It is in the rpc/test package to avoid package import cycles due to
+the dependency on node.
 
 This implementation is useful for:
 
@@ -58,7 +62,7 @@ func NewLocal(node *nm.Node) *Local {
 	}
 }
 
-var _ Client = (*Local)(nil)
+var _ rpcclient.Client = (*Local)(nil)
 
 // SetLogger allows to set a logger on the client.
 func (c *Local) SetLogger(l log.Logger) {
@@ -74,13 +78,13 @@ func (c *Local) ABCIInfo() (*ctypes.ResultABCIInfo, error) {
 }
 
 func (c *Local) ABCIQuery(path string, data bytes.HexBytes) (*ctypes.ResultABCIQuery, error) {
-	return c.ABCIQueryWithOptions(path, data, DefaultABCIQueryOptions)
+	return c.ABCIQueryWithOptions(path, data, rpcclient.DefaultABCIQueryOptions)
 }
 
 func (c *Local) ABCIQueryWithOptions(
 	path string,
 	data bytes.HexBytes,
-	opts ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
+	opts rpcclient.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
 	return core.ABCIQuery(c.ctx, path, data, opts.Height, opts.Prove)
 }
 

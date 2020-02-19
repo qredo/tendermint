@@ -39,8 +39,8 @@ func getHTTPClient() *client.HTTP {
 	return c
 }
 
-func getLocalClient() *client.Local {
-	return client.NewLocal(node)
+func getLocalClient() *rpctest.Local {
+	return rpctest.NewLocal(node)
 }
 
 // GetClients returns a slice of clients for table-driven tests
