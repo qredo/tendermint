@@ -1,4 +1,4 @@
-package client_test
+package http_test
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	rpctest "github.com/tendermint/tendermint/rpc/test"
 )
 
-func ExampleHTTP_simple() {
+func ExampleClient_simple() {
 	// Start a tendermint node (and kvstore) in the background to test against
 	app := kvstore.NewApplication()
 	node := rpctest.StartTendermint(app, rpctest.SuppressStdout, rpctest.RecreateConfig)
@@ -63,7 +63,7 @@ func ExampleHTTP_simple() {
 	// Got value   : satoshi
 }
 
-func ExampleHTTP_batching() {
+func ExampleClient_batching() {
 	// Start a tendermint node (and kvstore) in the background to test against
 	app := kvstore.NewApplication()
 	node := rpctest.StartTendermint(app, rpctest.SuppressStdout, rpctest.RecreateConfig)
