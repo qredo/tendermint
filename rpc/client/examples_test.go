@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/tendermint/tendermint/abci/example/kvstore"
-	"github.com/tendermint/tendermint/rpc/client"
+	httprpc "github.com/tendermint/tendermint/rpc/client/http"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpctest "github.com/tendermint/tendermint/rpc/test"
 )
@@ -18,7 +18,7 @@ func ExampleHTTP_simple() {
 
 	// Create our RPC client
 	rpcAddr := rpctest.GetConfig().RPC.ListenAddress
-	c, err := client.NewHTTP(rpcAddr, "/websocket")
+	c, err := httprpc.New(rpcAddr, "/websocket")
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +71,7 @@ func ExampleHTTP_batching() {
 
 	// Create our RPC client
 	rpcAddr := rpctest.GetConfig().RPC.ListenAddress
-	c, err := client.NewHTTP(rpcAddr, "/websocket")
+	c, err := httprpc.New(rpcAddr, "/websocket")
 	if err != nil {
 		panic(err)
 	}

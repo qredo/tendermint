@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/cli"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	httprpc "github.com/tendermint/tendermint/rpc/client/http"
 )
 
 var dumpCmd = &cobra.Command{
@@ -58,7 +58,7 @@ func dumpCmdHandler(_ *cobra.Command, args []string) error {
 		}
 	}
 
-	rpc, err := rpcclient.NewHTTP(nodeRPCAddr, "/websocket")
+	rpc, err := httprpc.New(nodeRPCAddr, "/websocket")
 	if err != nil {
 		return errors.Wrap(err, "failed to create new http client")
 	}
@@ -78,7 +78,7 @@ func dumpCmdHandler(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func dumpDebugData(outDir string, conf *cfg.Config, rpc *rpcclient.HTTP) {
+func dumpDebugData(outDir string, conf *cfg.Config, rpc *httprpc.Client) {
 	start := time.Now().UTC()
 
 	tmpDir, err := ioutil.TempDir(outDir, "tendermint_debug_tmp")

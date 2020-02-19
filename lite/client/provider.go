@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/lite"
 	lerr "github.com/tendermint/tendermint/lite/errors"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	httprpc "github.com/tendermint/tendermint/rpc/client/http"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
 )
@@ -40,7 +41,7 @@ func NewProvider(chainID string, client SignStatusClient) lite.Provider {
 // NewHTTPProvider can connect to a tendermint json-rpc endpoint
 // at the given url, and uses that as a read-only provider.
 func NewHTTPProvider(chainID, remote string) (lite.Provider, error) {
-	httpClient, err := rpcclient.NewHTTP(remote, "/websocket")
+	httpClient, err := httprpc.New(remote, "/websocket")
 	if err != nil {
 		return nil, err
 	}

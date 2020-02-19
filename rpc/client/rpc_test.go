@@ -23,6 +23,7 @@ import (
 	mempl "github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/rpc/client"
+	httprpc "github.com/tendermint/tendermint/rpc/client/http"
 	"github.com/tendermint/tendermint/rpc/client/local"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
@@ -30,9 +31,9 @@ import (
 	"github.com/tendermint/tendermint/types"
 )
 
-func getHTTPClient() *client.HTTP {
+func getHTTPClient() *httprpc.Client {
 	rpcAddr := rpctest.GetConfig().RPC.ListenAddress
-	c, err := client.NewHTTP(rpcAddr, "/websocket")
+	c, err := httprpc.New(rpcAddr, "/websocket")
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +55,7 @@ func GetClients() []client.Client {
 
 func TestNilCustomHTTPClient(t *testing.T) {
 	require.Panics(t, func() {
-		_, _ = client.NewHTTPWithClient("http://example.com", "/websocket", nil)
+		_, _ = httprpc.NewWithClient("http://example.com", "/websocket", nil)
 	})
 	require.Panics(t, func() {
 		_, _ = rpcclient.NewJSONRPCClientWithHTTPClient("http://example.com", nil)
@@ -63,7 +64,7 @@ func TestNilCustomHTTPClient(t *testing.T) {
 
 func TestCustomHTTPClient(t *testing.T) {
 	remote := rpctest.GetConfig().RPC.ListenAddress
-	c, err := client.NewHTTPWithClient(remote, "/websocket", http.DefaultClient)
+	c, err := httprpc.NewWithClient(remote, "/websocket", http.DefaultClient)
 	require.Nil(t, err)
 	status, err := c.Status()
 	require.NoError(t, err)
@@ -683,7 +684,7 @@ func TestBatchedJSONRPCCalls(t *testing.T) {
 	testBatchedJSONRPCCalls(t, c)
 }
 
-func testBatchedJSONRPCCalls(t *testing.T, c *client.HTTP) {
+func testBatchedJSONRPCCalls(t *testing.T, c *httprpc.Client) {
 	k1, v1, tx1 := MakeTxKV()
 	k2, v2, tx2 := MakeTxKV()
 

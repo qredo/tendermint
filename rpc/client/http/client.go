@@ -1,4 +1,4 @@
-package client
+package http
 
 import (
 	"context"
@@ -15,13 +15,14 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
 	"github.com/tendermint/tendermint/libs/service"
+	"github.com/tendermint/tendermint/rpc/client"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
 	"github.com/tendermint/tendermint/types"
 )
 
 /*
-HTTP is a Client implementation that communicates with a Tendermint node over
+Client is a Client implementation that communicates with a Tendermint node over
 JSON RPC and WebSockets.
 
 This is the main implementation you probably want to use in production code.
@@ -34,11 +35,11 @@ slow, Tendermint might cancel the subscription. The client will attempt to
 resubscribe (you don't need to do anything). It will keep trying every second
 indefinitely until successful.
 
-Request batching is available for JSON RPC requests over HTTP, which conforms to
+Request batching is available for JSON RPC requests over Client, which conforms to
 the JSON RPC specification (https://www.jsonrpc.org/specification#batch). See
 the example for more details.
 */
-type HTTP struct {
+type Client struct {
 	remote string
 	rpc    *rpcclient.JSONRPCClient
 
@@ -46,7 +47,9 @@ type HTTP struct {
 	*WSEvents
 }
 
-// BatchHTTP provides the same interface as `HTTP`, but allows for batching of
+var _ client.Client = (*Client)(nil)
+
+// BatchClient provides the same interface as `HTTP`, but allows for batching of
 // requests (as per https://www.jsonrpc.org/specification#batch). Do not
 // instantiate directly - rather use the HTTP.NewBatch() method to create an
 // instance of this struct.
@@ -56,7 +59,7 @@ type HTTP struct {
 // HTTP client. Multiple goroutines could also enqueue transactions in a single
 // batch, but ordering of transactions in the batch cannot be guaranteed in such
 // an example.
-type BatchHTTP struct {
+type BatchClient struct {
 	rpcBatch *rpcclient.JSONRPCRequestBatch
 	*baseRPCClient
 }
@@ -65,11 +68,11 @@ type BatchHTTP struct {
 // non-batch) must conform. Acts as an additional code-level sanity check to
 // make sure the implementations stay coherent.
 type rpcClient interface {
-	ABCIClient
-	HistoryClient
-	NetworkClient
-	SignClient
-	StatusClient
+	client.ABCIClient
+	client.HistoryClient
+	client.NetworkClient
+	client.SignClient
+	client.StatusClient
 }
 
 // baseRPCClient implements the basic RPC method logic without the actual
@@ -78,27 +81,27 @@ type baseRPCClient struct {
 	caller rpcclient.JSONRPCCaller
 }
 
-var _ rpcClient = (*HTTP)(nil)
-var _ rpcClient = (*BatchHTTP)(nil)
+var _ rpcClient = (*Client)(nil)
+var _ rpcClient = (*BatchClient)(nil)
 var _ rpcClient = (*baseRPCClient)(nil)
 
 //-----------------------------------------------------------------------------
 // HTTP
 
-// NewHTTP takes a remote endpoint in the form <protocol>://<host>:<port> and
+// New takes a remote endpoint in the form <protocol>://<host>:<port> and
 // the websocket path (which always seems to be "/websocket")
 // An error is returned on invalid remote. The function panics when remote is nil.
-func NewHTTP(remote, wsEndpoint string) (*HTTP, error) {
+func New(remote, wsEndpoint string) (*Client, error) {
 	httpClient, err := rpcclient.DefaultHTTPClient(remote)
 	if err != nil {
 		return nil, err
 	}
-	return NewHTTPWithClient(remote, wsEndpoint, httpClient)
+	return NewWithClient(remote, wsEndpoint, httpClient)
 }
 
-// NewHTTPWithClient allows for setting a custom http client (See NewHTTP).
+// NewWithClient allows for setting a custom http client (See NewHTTP).
 // An error is returned on invalid remote. The function panics when remote is nil.
-func NewHTTPWithClient(remote, wsEndpoint string, client *http.Client) (*HTTP, error) {
+func NewWithClient(remote, wsEndpoint string, client *http.Client) (*Client, error) {
 	if client == nil {
 		panic("nil http.Client provided")
 	}
@@ -111,7 +114,7 @@ func NewHTTPWithClient(remote, wsEndpoint string, client *http.Client) (*HTTP, e
 	ctypes.RegisterAmino(cdc)
 	rc.SetCodec(cdc)
 
-	httpClient := &HTTP{
+	httpClient := &Client{
 		rpc:           rc,
 		remote:        remote,
 		baseRPCClient: &baseRPCClient{caller: rc},
@@ -121,22 +124,20 @@ func NewHTTPWithClient(remote, wsEndpoint string, client *http.Client) (*HTTP, e
 	return httpClient, nil
 }
 
-var _ Client = (*HTTP)(nil)
-
 // SetLogger sets a logger.
-func (c *HTTP) SetLogger(l log.Logger) {
+func (c *Client) SetLogger(l log.Logger) {
 	c.WSEvents.SetLogger(l)
 }
 
 // Remote returns the remote network address in a string form.
-func (c *HTTP) Remote() string {
+func (c *Client) Remote() string {
 	return c.remote
 }
 
 // NewBatch creates a new batch client for this HTTP client.
-func (c *HTTP) NewBatch() *BatchHTTP {
+func (c *Client) NewBatch() *BatchClient {
 	rpcBatch := c.rpc.NewRequestBatch()
-	return &BatchHTTP{
+	return &BatchClient{
 		rpcBatch: rpcBatch,
 		baseRPCClient: &baseRPCClient{
 			caller: rpcBatch,
@@ -151,18 +152,18 @@ func (c *HTTP) NewBatch() *BatchHTTP {
 // compilation of the batched requests and send them off using the client as a
 // single request. On success, this returns a list of the deserialized results
 // from each request in the sent batch.
-func (b *BatchHTTP) Send() ([]interface{}, error) {
+func (b *BatchClient) Send() ([]interface{}, error) {
 	return b.rpcBatch.Send()
 }
 
 // Clear will empty out this batch of requests and return the number of requests
 // that were cleared out.
-func (b *BatchHTTP) Clear() int {
+func (b *BatchClient) Clear() int {
 	return b.rpcBatch.Clear()
 }
 
 // Count returns the number of enqueued requests waiting to be sent.
-func (b *BatchHTTP) Count() int {
+func (b *BatchClient) Count() int {
 	return b.rpcBatch.Count()
 }
 
@@ -188,13 +189,13 @@ func (c *baseRPCClient) ABCIInfo() (*ctypes.ResultABCIInfo, error) {
 }
 
 func (c *baseRPCClient) ABCIQuery(path string, data bytes.HexBytes) (*ctypes.ResultABCIQuery, error) {
-	return c.ABCIQueryWithOptions(path, data, DefaultABCIQueryOptions)
+	return c.ABCIQueryWithOptions(path, data, client.DefaultABCIQueryOptions)
 }
 
 func (c *baseRPCClient) ABCIQueryWithOptions(
 	path string,
 	data bytes.HexBytes,
-	opts ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
+	opts client.ABCIQueryOptions) (*ctypes.ResultABCIQuery, error) {
 	result := new(ctypes.ResultABCIQuery)
 	_, err := c.caller.Call("abci_query",
 		map[string]interface{}{"path": path, "data": data, "height": opts.Height, "prove": opts.Prove},
