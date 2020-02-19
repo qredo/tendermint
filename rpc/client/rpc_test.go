@@ -23,6 +23,7 @@ import (
 	mempl "github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/rpc/client"
+	"github.com/tendermint/tendermint/rpc/client/local"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
 	rpctest "github.com/tendermint/tendermint/rpc/test"
@@ -39,8 +40,8 @@ func getHTTPClient() *client.HTTP {
 	return c
 }
 
-func getLocalClient() *client.Local {
-	return client.NewLocal(node)
+func getLocalClient() *local.Client {
+	return local.New(node)
 }
 
 // GetClients returns a slice of clients for table-driven tests
