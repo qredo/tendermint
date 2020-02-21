@@ -28,15 +28,36 @@ When a full node receives the `ConflictingHeadersEvidence` evidence, it should
 a) validate it b) figure out if malicious behaviour is obvious (immediately
 slashable) or the fork accountability protocol needs to be started.
 
-(a): check both headers are valid (`ValidateBasic`), have
+### Validating headers
+
+Check both headers are valid (`ValidateBasic`), have
 the same height and signed by 1/3+ of known validator set.
 
-- What to do if neither H1 nor H2 was committed on the main chain?
-- What if light client validator set is not equal to full node's validator set
-(i.e. from full node's point of view both headers are not properly signed)
+- Q: What if light client validator set is not equal to full node's validator set
+  (i.e. from full node's point of view both headers are not properly signed)
 
-(b): download validator set from full node and intersect it with light client's
-validator set
+  Reject the evidence. It means light client is following a fork, but, hey, at least it will halt.
+
+- Q: Don't we want to punish validators who signed something else even if they
+  have less or equal than 1/3?
+
+  No consensus so far. Ethan said no, Zarko said yes.
+
+### Figuring out if malicious behaviour is immediately slashable
+
+Let's say H1 was committed on the main chain. Intersect validator sets of H1
+and H2.
+
+* if there are signers(H2) that are not part of signers(H1), they misbehaved as
+they are signing protocol messages in heights they are not validators =>
+immediately slashable.
+
+* if `H1.Round == H2.Round`, and some signers signed different precommit
+messages in both commits, then it is an equivocation misbehavior => immediately
+slashable.
+
+* if `H1.Round != H2.Round` we need to run full detection procedure => not
+* immediately slashable.
 
 Fork accountability specification defines 5 types of attacks.
 
