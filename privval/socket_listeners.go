@@ -45,7 +45,7 @@ var _ net.Listener = (*tcpListener)(nil)
 type tcpListener struct {
 	*net.TCPListener
 
-	secretConnKey ed25519.PrivKeyEd25519
+	secretConnKey ed25519.PrivKey
 
 	timeoutAccept    time.Duration
 	timeoutReadWrite time.Duration
@@ -53,7 +53,7 @@ type tcpListener struct {
 
 // NewTCPListener returns a listener that accepts authenticated encrypted connections
 // using the given secretConnKey and the default timeout values.
-func NewTCPListener(ln net.Listener, secretConnKey ed25519.PrivKeyEd25519) *tcpListener {
+func NewTCPListener(ln net.Listener, secretConnKey ed25519.PrivKey) *tcpListener {
 	return &tcpListener{
 		TCPListener:      ln.(*net.TCPListener),
 		secretConnKey:    secretConnKey,
