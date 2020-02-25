@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/pkg/errors"
 
@@ -33,7 +32,6 @@ func Subscribe(ctx *rpctypes.Context, query string) (*ctypes.ResultSubscribe, er
 
 	subCtx, cancel := context.WithTimeout(ctx.Context(), SubscribeTimeout)
 	defer cancel()
-	os.Exit(0)
 	sub, err := eventBus.Subscribe(subCtx, addr, q, 9999)
 	if err != nil {
 		return nil, err
